@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Bonn Mobility — Projektplan</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 820px;
+      margin: 40px auto;
+      padding: 0 24px 48px;
+      color: #1a1a1a;
+      line-height: 1.45;
+    }
+    h1 { font-size: 1.6rem; margin-bottom: 0.3rem; }
+    h2 { font-size: 1.1rem; margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: 0.3rem; }
+    p.lead { color: #444; margin-top: 0; }
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 1.2rem 0;
+      font-size: 0.95rem;
+    }
+    .box {
+      border: 1px solid #bbb;
+      padding: 8px 12px;
+      background: #f7f7f7;
+    }
+    .arrow { color: #666; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+    th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f0f0f0; }
+    .note { color: #555; font-size: 0.9rem; }
+    ol { padding-left: 1.2rem; }
+  </style>
+</head>
+<body>
+  <h1>Bonn Mobility — Projektplan</h1>
+  <p class="lead">Öffentliche Plattform für Welo in Bonn/Rhein-Sieg: Live zeigen, Historie selbst mitschneiden, daraus Analytics ableiten.</p>
+
+  <h2>System</h2>
+  <div class="flow">
+    <span class="box">Welo GBFS</span><span class="arrow">→</span>
+    <span class="box">Ingestion</span><span class="arrow">→</span>
+    <span class="box">Supabase</span><span class="arrow">→</span>
+    <span class="box">API</span><span class="arrow">→</span>
+    <span class="box">Website (Vercel)</span>
+  </div>
+  <p class="note">Analytics liest Snapshots und schreibt Kennzahlen zurück in Supabase. Website und Datenbank bleiben außerhalb von Kubernetes. Im Cluster laufen nur Ingestion, API und Analytics.</p>
+
+  <h2>Dienste</h2>
+  <table>
+    <tr><th>Dienst</th><th>Job</th><th>Wo</th></tr>
+    <tr><td>Ingestion</td><td>Welo holen, prüfen, Snapshots speichern</td><td>Docker → Kubernetes</td></tr>
+    <tr><td>API</td><td>Live, Historie, Analytics an die Website</td><td>Docker → Kubernetes</td></tr>
+    <tr><td>Analytics</td><td>Stundenwerte, Health, Trends rechnen</td><td>Docker → Kubernetes</td></tr>
+    <tr><td>Website</td><td>Karte, Station, Dashboard</td><td>Vercel</td></tr>
+    <tr><td>Datenbank</td><td>Stationen, Snapshots, Kennzahlen</td><td>Supabase</td></tr>
+  </table>
+
+  <h2>Anforderungen</h2>
+  <table>
+    <tr><th>Bereich</th><th>Inhalt</th></tr>
+    <tr><td>Produkt</td><td>Live-Karte, Stations-Detail, Verfügbarkeitskurven, Health, öffentlich. Browser spricht nie Welo.</td></tr>
+    <tr><td>Daten</td><td>Eigene Minuten-Snapshots. Retention, damit die DB nicht vollläuft. Kennzahlen aus Historie, nicht aus Fahrten.</td></tr>
+    <tr><td>Betrieb</td><td>Dienste getrennt deployen und skalieren. Healthchecks, Rolling Updates, CI/CD, Monitoring, Lasttest.</td></tr>
+  </table>
+
+  <h2>Werkzeuge</h2>
+  <table>
+    <tr><th>Pflicht</th><th>Mit dem Cluster</th><th>Nur bei Bedarf</th></tr>
+    <tr>
+      <td>Docker, Compose, GitHub Actions, Vercel, Supabase</td>
+      <td>Kubernetes, Ingress, Terraform, Prometheus, Grafana, k6</td>
+      <td>Helm, Redis, Message Queue, Logging/Tracing</td>
+    </tr>
+  </table>
+
+  <h2>Bau-Reihenfolge</h2>
+  <ol>
+    <li>Holen + speichern — fertig, wenn ein Poll in der DB liegt</li>
+    <li>API + Karte — fertig, wenn öffentliche Marker da sind und der Browser uns fragt</li>
+    <li>Historie + Health — fertig, wenn Kurve und Score aus eigenen Snapshots kommen</li>
+    <li>Drei Container — fertig, wenn Compose einen Dienst neu starten kann und der Rest läuft</li>
+    <li>Kubernetes + CI — fertig, wenn ein Rolling Update der API Ingestion nicht stoppt</li>
+    <li>Messen + Last — fertig, wenn Grafana und ein k6-Protokoll existieren</li>
+  </ol>
+
+  <p class="note">Nicht im Kern: Nutzerkonten, Geozonen, echte Fahrten, Fake-ML.</p>
+</body>
+</html>
