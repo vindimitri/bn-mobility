@@ -38,17 +38,22 @@
 </head>
 <body>
   <h1>Bonn Mobility — Projektplan</h1>
-  <p class="lead">Öffentliche Plattform für Welo in Bonn/Rhein-Sieg: Live zeigen, Historie selbst mitschneiden, daraus Analytics ableiten.</p>
+  <p class="lead">Öffentliche Plattform für Welo in Bonn/Rhein-Sieg: Live zeigen, Historie selbst mitschneiden, daraus Analytics ableiten. Backend zuerst lokal, später Cloud-Kubernetes.</p>
 
   <h2>System</h2>
   <div class="flow">
     <span class="box">Welo GBFS</span><span class="arrow">→</span>
     <span class="box">Ingestion</span><span class="arrow">→</span>
-    <span class="box">Supabase</span><span class="arrow">→</span>
+    <span class="box">Postgres</span><span class="arrow">→</span>
     <span class="box">API</span><span class="arrow">→</span>
     <span class="box">Website (Vercel)</span>
   </div>
-  <p class="note">Analytics liest Snapshots und schreibt Kennzahlen zurück in Supabase. Website und Datenbank bleiben außerhalb von Kubernetes. Im Cluster laufen nur Ingestion, API und Analytics.</p>
+  <p class="note">
+    Analytics liest Snapshots und schreibt Kennzahlen zurück in Postgres.
+    Container (Ingestion, API, Analytics, Postgres): zuerst Docker Compose auf dem PC,
+    später dieselben Images in Cloud-Kubernetes. Website bleibt auf Vercel.
+    Domain: bonn-mobility.de (IONOS → Vercel DNS).
+  </p>
 
   <h2>Dienste</h2>
   <table>
@@ -56,38 +61,38 @@
     <tr><td>Ingestion</td><td>Welo holen, prüfen, Snapshots speichern</td><td>Docker → Kubernetes</td></tr>
     <tr><td>API</td><td>Live, Historie, Analytics an die Website</td><td>Docker → Kubernetes</td></tr>
     <tr><td>Analytics</td><td>Stundenwerte, Health, Trends rechnen</td><td>Docker → Kubernetes</td></tr>
+    <tr><td>Postgres</td><td>Stationen, Snapshots, Kennzahlen</td><td>Docker → Kubernetes (Volume/Backup)</td></tr>
     <tr><td>Website</td><td>Karte, Station, Dashboard</td><td>Vercel</td></tr>
-    <tr><td>Datenbank</td><td>Stationen, Snapshots, Kennzahlen</td><td>Supabase</td></tr>
   </table>
 
   <h2>Anforderungen</h2>
   <table>
     <tr><th>Bereich</th><th>Inhalt</th></tr>
     <tr><td>Produkt</td><td>Live-Karte, Stations-Detail, Verfügbarkeitskurven, Health, öffentlich. Browser spricht nie Welo.</td></tr>
-    <tr><td>Daten</td><td>Eigene Minuten-Snapshots. Retention, damit die DB nicht vollläuft. Kennzahlen aus Historie, nicht aus Fahrten.</td></tr>
-    <tr><td>Betrieb</td><td>Dienste getrennt deployen und skalieren. Healthchecks, Rolling Updates, CI/CD, Monitoring, Lasttest.</td></tr>
+    <tr><td>Daten</td><td>Eigene Minuten-Snapshots. Retention. Kennzahlen aus Historie, nicht aus Fahrten.</td></tr>
+    <tr><td>Betrieb</td><td>Backend containerisiert. Getrennt deployen/skalieren. Healthchecks, CI/CD, Monitoring, Lasttest (k6).</td></tr>
   </table>
 
   <h2>Werkzeuge</h2>
   <table>
     <tr><th>Pflicht</th><th>Mit dem Cluster</th><th>Nur bei Bedarf</th></tr>
     <tr>
-      <td>Docker, Compose, GitHub Actions, Vercel, Supabase</td>
-      <td>Kubernetes, Ingress, Terraform, Prometheus, Grafana, k6</td>
-      <td>Helm, Redis, Message Queue, Logging/Tracing</td>
+      <td>Docker, Compose, Postgres-Image, GitHub Actions, Vercel</td>
+      <td>Kubernetes (z. B. DO/Civo), Ingress, Terraform, Prometheus, Grafana, k6</td>
+      <td>Helm, Redis, Message Queue, Logging/Tracing, Supabase</td>
     </tr>
   </table>
 
   <h2>Bau-Reihenfolge</h2>
   <ol>
-    <li>Holen + speichern — fertig, wenn ein Poll in der DB liegt</li>
-    <li>API + Karte — fertig, wenn öffentliche Marker da sind und der Browser uns fragt</li>
-    <li>Historie + Health — fertig, wenn Kurve und Score aus eigenen Snapshots kommen</li>
-    <li>Drei Container — fertig, wenn Compose einen Dienst neu starten kann und der Rest läuft</li>
-    <li>Kubernetes + CI — fertig, wenn ein Rolling Update der API Ingestion nicht stoppt</li>
-    <li>Messen + Last — fertig, wenn Grafana und ein k6-Protokoll existieren</li>
+    <li>Postgres + Schema lokal (Compose) — ein Poll speichert Welo-Daten</li>
+    <li>API + Karte — Browser fragt nur /v1</li>
+    <li>Historie + Health — Kurve/Score aus eigenen Snapshots</li>
+    <li>Vier Container lokal — Compose: ein Dienst neu, Rest läuft</li>
+    <li>Cloud-Kubernetes — dieselben Images; Rolling Update der API ohne Ingest-Ausfall</li>
+    <li>Messen + Last — Grafana + k6-Protokoll</li>
   </ol>
 
-  <p class="note">Nicht im Kern: Nutzerkonten, Geozonen, echte Fahrten, Fake-ML.</p>
+  <p class="note">Nicht im Kern: Nutzerkonten, Geozonen, echte Fahrten, Fake-ML. Supabase entfällt zugunsten des Postgres-Containers.</p>
 </body>
 </html>

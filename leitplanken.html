@@ -43,19 +43,18 @@
 
   <h1>Bonn Mobility — Leitplanken</h1>
   <p class="lead">
-    Kurzüberblick: Verkehrswege des Systems und die Vorgehensweise.
-    Ziel: öffentliche Welo-Plattform für Bonn/Rhein-Sieg mit eigener Historie,
-    später DevOps-Nachweis (Container, Kubernetes, Lastsimulation).
+    Kurzüberblick: Verkehrswege und Vorgehensweise.
+    Backend (Ingestion, API, Analytics, Postgres) zuerst auf dem PC in Docker,
+    später Cloud-Kubernetes. Website auf Vercel. Domain: bonn-mobility.de.
   </p>
 
-  <h2>1. Verkehrsdiagramm (gesamter Datenfluss)</h2>
+  <h2>1. Verkehrsdiagramm</h2>
   <p class="note">
-    Die Website spricht nie direkt mit Welo. Nur Ingestion kennt den externen Feed.
-    Website und Datenbank bleiben außerhalb von Kubernetes.
+    Die Website spricht nie direkt mit Welo. Nur Ingestion kennt den Feed.
+    Gestrichelter Rahmen = alles containerisiert (Compose → später K8s).
   </p>
 
-  <!-- Component / flow diagram -->
-  <svg viewBox="0 0 860 620" xmlns="http://www.w3.org/2000/svg" aria-label="UML-ähnliches Verkehrsdiagramm">
+  <svg viewBox="0 0 860 620" xmlns="http://www.w3.org/2000/svg" aria-label="Verkehrsdiagramm">
     <defs>
       <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
         <path d="M0,0 L6,3 L0,6 Z" fill="#333"/>
@@ -68,7 +67,6 @@
       </marker>
     </defs>
 
-    <!-- Actor: Nutzer -->
     <circle cx="70" cy="90" r="14" fill="none" stroke="#333" stroke-width="1.5"/>
     <line x1="70" y1="104" x2="70" y2="140" stroke="#333" stroke-width="1.5"/>
     <line x1="70" y1="118" x2="50" y2="108" stroke="#333" stroke-width="1.5"/>
@@ -77,102 +75,84 @@
     <line x1="70" y1="140" x2="85" y2="165" stroke="#333" stroke-width="1.5"/>
     <text x="70" y="185" text-anchor="middle" font-size="12" font-family="Segoe UI, sans-serif">Nutzer</text>
 
-    <!-- Website -->
     <rect x="150" y="70" width="160" height="70" rx="4" fill="#eef4fb" stroke="#1a5fb4" stroke-width="1.5"/>
     <text x="230" y="98" text-anchor="middle" font-size="13" font-weight="600" font-family="Segoe UI, sans-serif">Website</text>
     <text x="230" y="118" text-anchor="middle" font-size="11" font-family="Segoe UI, sans-serif">Next.js · Vercel</text>
-    <text x="230" y="134" text-anchor="middle" font-size="10" fill="#555" font-family="Segoe UI, sans-serif">bn-mobility.de (IONOS DNS)</text>
+    <text x="230" y="134" text-anchor="middle" font-size="10" fill="#555" font-family="Segoe UI, sans-serif">bonn-mobility.de</text>
 
-    <!-- API -->
     <rect x="390" y="70" width="160" height="70" rx="4" fill="#eef4fb" stroke="#1a5fb4" stroke-width="1.5"/>
     <text x="470" y="98" text-anchor="middle" font-size="13" font-weight="600" font-family="Segoe UI, sans-serif">Mobility API</text>
     <text x="470" y="118" text-anchor="middle" font-size="11" font-family="Segoe UI, sans-serif">Container · später K8s</text>
     <text x="470" y="134" text-anchor="middle" font-size="10" fill="#555" font-family="Segoe UI, sans-serif">GET /v1/stations …</text>
 
-    <!-- Supabase -->
     <rect x="390" y="220" width="160" height="80" rx="4" fill="#f3f7ef" stroke="#2e7d32" stroke-width="1.5"/>
-    <text x="470" y="250" text-anchor="middle" font-size="13" font-weight="600" font-family="Segoe UI, sans-serif">Supabase</text>
-    <text x="470" y="270" text-anchor="middle" font-size="11" font-family="Segoe UI, sans-serif">PostgreSQL</text>
+    <text x="470" y="250" text-anchor="middle" font-size="13" font-weight="600" font-family="Segoe UI, sans-serif">Postgres</text>
+    <text x="470" y="270" text-anchor="middle" font-size="11" font-family="Segoe UI, sans-serif">Container + Volume</text>
     <text x="470" y="286" text-anchor="middle" font-size="10" fill="#555" font-family="Segoe UI, sans-serif">Stationen · Snapshots · KPIs</text>
 
-    <!-- Ingestion -->
     <rect x="150" y="220" width="160" height="80" rx="4" fill="#fff8e7" stroke="#b36b00" stroke-width="1.5"/>
     <text x="230" y="250" text-anchor="middle" font-size="13" font-weight="600" font-family="Segoe UI, sans-serif">Ingestion</text>
     <text x="230" y="270" text-anchor="middle" font-size="11" font-family="Segoe UI, sans-serif">Container · später K8s</text>
     <text x="230" y="286" text-anchor="middle" font-size="10" fill="#555" font-family="Segoe UI, sans-serif">Poll ~60s · nur Writer zu Welo</text>
 
-    <!-- Analytics -->
     <rect x="630" y="220" width="160" height="80" rx="4" fill="#fff8e7" stroke="#b36b00" stroke-width="1.5"/>
     <text x="710" y="250" text-anchor="middle" font-size="13" font-weight="600" font-family="Segoe UI, sans-serif">Analytics</text>
     <text x="710" y="270" text-anchor="middle" font-size="11" font-family="Segoe UI, sans-serif">Container · später K8s</text>
     <text x="710" y="286" text-anchor="middle" font-size="10" fill="#555" font-family="Segoe UI, sans-serif">Stundenwerte · Health</text>
 
-    <!-- Welo -->
     <rect x="150" y="390" width="160" height="70" rx="4" fill="#f5f5f5" stroke="#666" stroke-width="1.5"/>
     <text x="230" y="420" text-anchor="middle" font-size="13" font-weight="600" font-family="Segoe UI, sans-serif">Welo / GBFS</text>
     <text x="230" y="440" text-anchor="middle" font-size="11" font-family="Segoe UI, sans-serif">externe Quelle · nextbike</text>
 
-    <!-- k6 box -->
     <rect x="630" y="70" width="160" height="70" rx="4" fill="#f5f0fa" stroke="#6a1b9a" stroke-width="1.5"/>
     <text x="710" y="98" text-anchor="middle" font-size="13" font-weight="600" font-family="Segoe UI, sans-serif">k6 Lasttest</text>
     <text x="710" y="118" text-anchor="middle" font-size="11" font-family="Segoe UI, sans-serif">simulierte Nutzer</text>
     <text x="710" y="134" text-anchor="middle" font-size="10" fill="#555" font-family="Segoe UI, sans-serif">gegen API (Demo)</text>
 
-    <!-- Cluster boundary -->
     <rect x="130" y="200" width="680" height="120" rx="6" fill="none" stroke="#999" stroke-dasharray="5 4" stroke-width="1.2"/>
-    <text x="145" y="215" font-size="10" fill="#666" font-family="Segoe UI, sans-serif">Docker lokal → später Kubernetes (Cloud)</text>
+    <text x="145" y="215" font-size="10" fill="#666" font-family="Segoe UI, sans-serif">Docker Compose (PC) → später Kubernetes (Cloud): Ingestion, API, Analytics, Postgres</text>
 
-    <!-- Arrows: Nutzer -> Website -->
     <line x1="95" y1="100" x2="148" y2="100" stroke="#1a5fb4" stroke-width="1.6" marker-end="url(#arrowBlue)"/>
     <text x="120" y="92" font-size="9" fill="#1a5fb4" font-family="Segoe UI, sans-serif">HTTPS</text>
 
-    <!-- Website -> API -->
     <line x1="310" y1="105" x2="388" y2="105" stroke="#1a5fb4" stroke-width="1.6" marker-end="url(#arrowBlue)"/>
     <text x="340" y="97" font-size="9" fill="#1a5fb4" font-family="Segoe UI, sans-serif">/v1</text>
 
-    <!-- API -> Supabase -->
     <line x1="470" y1="140" x2="470" y2="218" stroke="#2e7d32" stroke-width="1.6" marker-end="url(#arrowGreen)"/>
     <text x="478" y="180" font-size="9" fill="#2e7d32" font-family="Segoe UI, sans-serif">lesen</text>
 
-    <!-- Ingestion -> Supabase -->
     <line x1="310" y1="260" x2="388" y2="260" stroke="#b36b00" stroke-width="1.6" marker-end="url(#arrow)"/>
     <text x="335" y="252" font-size="9" fill="#b36b00" font-family="Segoe UI, sans-serif">schreiben</text>
 
-    <!-- Analytics <-> Supabase -->
     <line x1="550" y1="250" x2="628" y2="250" stroke="#b36b00" stroke-width="1.6" marker-end="url(#arrow)"/>
     <line x1="628" y1="270" x2="550" y2="270" stroke="#2e7d32" stroke-width="1.4" marker-end="url(#arrowGreen)"/>
     <text x="575" y="242" font-size="9" fill="#b36b00" font-family="Segoe UI, sans-serif">KPIs</text>
     <text x="575" y="285" font-size="9" fill="#2e7d32" font-family="Segoe UI, sans-serif">lesen</text>
 
-    <!-- Welo -> Ingestion -->
     <line x1="230" y1="390" x2="230" y2="302" stroke="#666" stroke-width="1.6" marker-end="url(#arrow)"/>
     <text x="238" y="350" font-size="9" fill="#666" font-family="Segoe UI, sans-serif">GBFS JSON</text>
 
-    <!-- k6 -> API -->
     <line x1="630" y1="105" x2="552" y2="105" stroke="#6a1b9a" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
     <text x="585" y="96" font-size="9" fill="#6a1b9a" font-family="Segoe UI, sans-serif">Last</text>
 
-    <!-- Outside notes -->
     <text x="430" y="480" font-size="12" font-weight="600" font-family="Segoe UI, sans-serif">Hosting-Zuordnung</text>
-    <text x="430" y="502" font-size="11" font-family="Segoe UI, sans-serif">IONOS: nur Domain / DNS</text>
+    <text x="430" y="502" font-size="11" font-family="Segoe UI, sans-serif">IONOS: Domain (Nameserver → Vercel)</text>
     <text x="430" y="520" font-size="11" font-family="Segoe UI, sans-serif">Vercel: Website</text>
-    <text x="430" y="538" font-size="11" font-family="Segoe UI, sans-serif">Supabase: Datenbank</text>
-    <text x="430" y="556" font-size="11" font-family="Segoe UI, sans-serif">PC → später Cloud-Cluster: Ingestion, API, Analytics</text>
-    <text x="430" y="580" font-size="11" font-family="Segoe UI, sans-serif">Website liest nur die eigene API — nie Welo direkt.</text>
+    <text x="430" y="538" font-size="11" font-family="Segoe UI, sans-serif">PC Compose → Cloud-K8s: Ingestion, API, Analytics, Postgres</text>
+    <text x="430" y="556" font-size="11" font-family="Segoe UI, sans-serif">Website liest nur die eigene API — nie Welo direkt.</text>
+    <text x="430" y="580" font-size="11" font-family="Segoe UI, sans-serif">Kein Supabase: Postgres als eigener Container.</text>
   </svg>
 
   <p class="legend">
-    Blau = Nutzerverkehr · Orange = Schreiben / Verarbeitung · Grün = Lesen aus der DB ·
-    Lila gestrichelt = simulierte Last (k6) · Gestrichelter Rahmen = Container-Bereich
+    Blau = Nutzerverkehr · Orange = Schreiben · Grün = Lesen · Lila = k6 · Rahmen = Container
   </p>
 
-  <h3>Sequenz: was passiert bei einem Kartenaufruf</h3>
-  <svg viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg" aria-label="Sequenzdiagramm Kartenaufruf">
-    <!-- lifelines -->
+  <h3>Sequenz: Kartenaufruf</h3>
+  <svg viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg" aria-label="Sequenzdiagramm">
     <text x="80" y="24" text-anchor="middle" font-size="11" font-weight="600" font-family="Segoe UI, sans-serif">Nutzer</text>
     <text x="250" y="24" text-anchor="middle" font-size="11" font-weight="600" font-family="Segoe UI, sans-serif">Website</text>
     <text x="430" y="24" text-anchor="middle" font-size="11" font-weight="600" font-family="Segoe UI, sans-serif">API</text>
-    <text x="610" y="24" text-anchor="middle" font-size="11" font-weight="600" font-family="Segoe UI, sans-serif">Supabase</text>
+    <text x="610" y="24" text-anchor="middle" font-size="11" font-weight="600" font-family="Segoe UI, sans-serif">Postgres</text>
     <text x="780" y="24" text-anchor="middle" font-size="11" font-weight="600" font-family="Segoe UI, sans-serif">Welo</text>
 
     <line x1="80" y1="35" x2="80" y2="240" stroke="#aaa" stroke-dasharray="3 3"/>
@@ -181,25 +161,20 @@
     <line x1="610" y1="35" x2="610" y2="240" stroke="#aaa" stroke-dasharray="3 3"/>
     <line x1="780" y1="35" x2="780" y2="240" stroke="#aaa" stroke-dasharray="3 3"/>
 
-    <!-- 1 -->
     <line x1="80" y1="60" x2="250" y2="60" stroke="#1a5fb4" stroke-width="1.4" marker-end="url(#arrowBlue)"/>
     <text x="165" y="54" text-anchor="middle" font-size="10" font-family="Segoe UI, sans-serif">1. öffnet Karte</text>
 
-    <!-- 2 -->
     <line x1="250" y1="95" x2="430" y2="95" stroke="#1a5fb4" stroke-width="1.4" marker-end="url(#arrowBlue)"/>
     <text x="340" y="89" text-anchor="middle" font-size="10" font-family="Segoe UI, sans-serif">2. GET /v1/stations</text>
 
-    <!-- 3 -->
     <line x1="430" y1="130" x2="610" y2="130" stroke="#2e7d32" stroke-width="1.4" marker-end="url(#arrowGreen)"/>
     <text x="520" y="124" text-anchor="middle" font-size="10" font-family="Segoe UI, sans-serif">3. letzter Snapshot</text>
 
-    <!-- 4 return -->
     <line x1="610" y1="160" x2="430" y2="160" stroke="#2e7d32" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#arrowGreen)"/>
     <line x1="430" y1="185" x2="250" y2="185" stroke="#1a5fb4" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#arrowBlue)"/>
     <line x1="250" y1="210" x2="80" y2="210" stroke="#1a5fb4" stroke-width="1.2" stroke-dasharray="3 2" marker-end="url(#arrowBlue)"/>
     <text x="340" y="204" text-anchor="middle" font-size="10" font-family="Segoe UI, sans-serif">4. Stationen + freie Räder</text>
 
-    <!-- note: Welo not involved -->
     <text x="780" y="130" text-anchor="middle" font-size="10" fill="#888" font-family="Segoe UI, sans-serif">nicht</text>
     <text x="780" y="145" text-anchor="middle" font-size="10" fill="#888" font-family="Segoe UI, sans-serif">beteiligt</text>
     <line x1="760" y1="100" x2="800" y2="160" stroke="#ccc" stroke-width="1.2"/>
@@ -207,74 +182,66 @@
   </svg>
 
   <p class="note">
-    Parallel dazu (nicht im Nutzerklick): Ingestion pollt Welo regelmäßig und schreibt Snapshots.
-    Analytics liest Snapshots und schreibt Kennzahlen. k6 simuliert später viele parallele Schritte 1–4.
+    Parallel: Ingestion pollt Welo → Postgres. Analytics verdichtet. k6 lastet die API.
   </p>
 
   <div class="page-break"></div>
 
-  <h2>2. Vorgehensweise (deduktiv, kurz)</h2>
-  <p class="note">
-    Von innen nach außen: erst Datenpfad, dann Website, dann Container, dann Cloud-Kubernetes und Last.
-  </p>
+  <h2>2. Vorgehensweise</h2>
+  <p class="note">Erst Backend lokal containerisiert, dann Website, dann Cloud-K8s und Last.</p>
 
   <ol>
     <li>
-      <strong>Fundament:</strong> Schema in Supabase
+      <strong>Fundament lokal:</strong> Compose mit Postgres + Schema
       (<code>stations</code>, <code>station_snapshots</code>, <code>ingest_runs</code>).
-      GBFS-Client: ein erfolgreicher Poll speichert echte Welo-Daten.
+      Erster erfolgreicher Welo-Poll.
     </li>
     <li>
-      <strong>Live-Pfad:</strong> Read-API <code>/v1/stations</code>, Karte auf Vercel,
-      Domain (IONOS DNS → Vercel). Browser spricht nur uns.
+      <strong>Live-Pfad:</strong> API <code>/v1/stations</code>, Karte auf Vercel,
+      Domain bonn-mobility.de. Browser spricht nur uns.
     </li>
     <li>
-      <strong>Historie:</strong> regelmäßige Snapshots, Retention, Station-Kurve,
-      einfacher Health-Wert. Optional Flexzonen-Räder als zweiter Layer.
+      <strong>Historie:</strong> Snapshots, Retention, Kurve, Health.
     </li>
     <li>
-      <strong>Container lokal:</strong> Ingestion, API, Analytics als Docker-Images,
-      Compose auf dem PC. Ein Container neu starten, Rest läuft weiter.
+      <strong>Vier Container lokal:</strong> Ingestion, API, Analytics, Postgres.
+      Ein Dienst neu starten, Rest läuft.
     </li>
     <li>
-      <strong>Cloud-Kubernetes:</strong> dieselben Images deployen. Healthchecks,
-      Limits, Rolling Updates. Ingestion = 1 Replica; API darf skalieren.
+      <strong>Cloud-Kubernetes:</strong> dieselben Images (inkl. Postgres mit Volume).
+      Ingestion = 1 Replica; API darf skalieren.
     </li>
     <li>
-      <strong>DevOps-Nachweis:</strong> Prometheus/Grafana, k6 mit simulierten Nutzern
-      gegen Karte/API, Autoscaling und Ausfalltest dokumentieren.
+      <strong>DevOps-Nachweis:</strong> Prometheus/Grafana, k6, Autoscaling, Ausfalltest.
     </li>
   </ol>
 
   <div class="box">
     <strong>Gate-Regel:</strong> Keine Phase überspringen.
-    Ohne stabile Snapshots kein sinnvolles Kubernetes.
-    Ohne drei laufende Container keine Last-Demo.
+    Ohne stabile Snapshots kein K8s. Ohne laufende Container keine Last-Demo.
   </div>
 
-  <h3>Was bewusst später / nicht Kern ist</h3>
+  <h3>Später / nicht Kern</h3>
   <table>
     <tr><th>Später</th><th>Nicht Kern</th></tr>
     <tr>
-      <td>E-Scooter (eigene Feeds), Redis, Helm, Queue</td>
-      <td>Website redet mit Welo, Fake-ML, Nutzerkonten als Pflicht</td>
+      <td>E-Scooter, Redis, Helm, Queue</td>
+      <td>Website → Welo, Fake-ML, Nutzerkonten als Pflicht, Supabase</td>
     </tr>
   </table>
 
   <h3>Hosting-Merkblatt</h3>
   <table>
     <tr><th>Teil</th><th>Wo</th></tr>
-    <tr><td>Domain</td><td>IONOS (nur DNS)</td></tr>
-    <tr><td>Website</td><td>Vercel (Free reicht zum Start)</td></tr>
-    <tr><td>Datenbank</td><td>Supabase (Free zum Start, Pro wenn Historie wächst)</td></tr>
-    <tr><td>Container zuerst</td><td>PC (Docker Compose)</td></tr>
-    <tr><td>Container später</td><td>Cloud-Kubernetes</td></tr>
-    <tr><td>Lastsimulation</td><td>k6 (lokal / CI) gegen die API</td></tr>
+    <tr><td>Domain</td><td>IONOS → Vercel Nameserver</td></tr>
+    <tr><td>Website</td><td>Vercel</td></tr>
+    <tr><td>Backend zuerst</td><td>PC: Docker Compose (4 Container)</td></tr>
+    <tr><td>Backend später</td><td>Cloud-Kubernetes (z. B. DigitalOcean/Civo)</td></tr>
+    <tr><td>Datenbank</td><td>Postgres-Container (+ Volume/Backup)</td></tr>
+    <tr><td>Lastsimulation</td><td>k6 gegen die API</td></tr>
   </table>
 
-  <p class="note">
-    Stand: August 2026 · Ergänzung zu <code>projektplan.pdf</code> und der Cursor-Projektbeschreibung.
-  </p>
+  <p class="note">Stand: August 2026 · angepasst: Postgres-Container statt Supabase.</p>
 
 </body>
 </html>
