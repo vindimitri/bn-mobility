@@ -35,8 +35,24 @@ Supabase entfällt. Postgres als Container. Backend zuerst lokal, dann Cloud-K8s
 
 ---
 
+## Domain erreichbar machen (erledigt — Bonn; gleiche Logik für Wien)
+
+Wie wir es **schlussendlich** hinbekommen haben (kurz, deduktiv):
+
+1. Domain gekauft (damals `bonn-mobility.de` bei IONOS; jetzt Ziel `wien-mobility.at`).
+2. Domain in **Vercel** dem Projekt hinzugefügt (Settings → Domains).
+3. **Nicht** bei IONOS einzelne A/CNAME-Records pflegen (war fehleranfällig).
+4. Stattdessen bei IONOS die **Nameserver auf Vercel** umgestellt: `ns1.vercel-dns.com` / `ns2.vercel-dns.com`.
+5. Vercel zeigt Domain **Valid** + **SSL** → DNS/Zertifikat ok.
+6. Heim-Router-DNS kann nachhängen → Check per Mobilfunk / DNS `8.8.8.8` oder `1.1.1.1`.
+7. Apex-404 ≠ Domain kaputt → oft fehlendes/falsches Deploy (Framework **Next.js**, Output Directory leer lassen, neu deployen).
+
+Merksatz: **Vercel steuert DNS (Nameserver) + Hosting; Registrar nur Domain + NS-Delegation.**
+
+---
+
 ## Als Nächstes
-1. App-Deploy (404 weg)
+1. App-Deploy (404 weg) / Stadt-Pivot Wien (`wien-mobility.at`)
 2. Compose: Postgres + Schema
-3. Welo-Poll speichern
+3. GBFS-Poll speichern (WienMobil Rad)
 4. API + Karte

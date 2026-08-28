@@ -1,0 +1,28 @@
+# Bonn Mobility — local backend (Step 1: Postgres only)
+# From this directory:
+#   docker compose --env-file ../../.env up -d
+# Or from repo root:
+#   docker compose -f infra/compose/docker-compose.yml --env-file .env up -d
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: bn-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bnsecret}
+      POSTGRES_DB: ${POSTGRES_DB:-bnmobility}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - bn_pgdata:/var/lib/postgresql/data
+      - ../../db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  bn_pgdata:
