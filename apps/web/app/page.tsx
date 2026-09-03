@@ -1,16 +1,21 @@
+import ViennaMap from "./components/ViennaMap";
+
 export default function HomePage() {
   return (
-    <main>
-      <h1 className="brand">Bonn Mobility</h1>
-      <p className="lead">
-        Live-Verfügbarkeit und eigene Historie zum Welo-Fahrradmietsystem in
-        Bonn und im Rhein-Sieg-Kreis. Die Plattform wird schrittweise aufgebaut.
-      </p>
-      <p className="status">
-        <span className="status-dot" aria-hidden />
-        Domain aktiv · App-Gerüst online · Karte folgt
-      </p>
-      <p className="meta">bonn-mobility.de · Phase 1</p>
+    <main className="hero" id="top">
+      <ViennaMap key="wien-map-focus-v3" />
+
+      <div className="hero-veil" aria-hidden />
+
+      <header className="hero-copy">
+        <p className="brand">Wien Mobility</p>
+        <h1 className="headline">Die Stadt auf einen Blick.</h1>
+        <p className="lead">
+          Live-Verfügbarkeit und eigene Historie für WienMobil Rad.
+        </p>
+      </header>
+
+      <p className="hero-credit">Karte · Wien im Fokus</p>
     </main>
   );
 }
